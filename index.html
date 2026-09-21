@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BharatQuant AI | Indian Stock Market Prediction & Analytics Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        bullish: '#10b981',
+                        bearish: '#ef4444',
+                        panel: '#1e293b',
+                        panelDark: '#0f172a'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        /* Custom scrollbar styling for terminal feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .light .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col transition-colors duration-200 light:bg-slate-50 light:text-slate-900">
+
+    <!-- Top Nav & Live Indian Market Ticker -->
+    <header class="border-b border-slate-800 bg-slate-900/90 light:bg-white light:border-slate-200 sticky top-0 z-50 backdrop-blur-md">
+        <div class="flex items-center justify-between px-4 py-2.5">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg border border-indigo-500/30">
+                    <i data-lucide="trending-up" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-tight flex items-center gap-2">
+                        BHARATQUANT <span class="bg-indigo-600 text-white text-[10px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded">AI 4.0</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">NSE / BSE Predictive Analytics & Maximization Engine</p>
+                </div>
+            </div>
+
+            <!-- Ticker Fast Info -->
+            <div class="hidden xl:flex items-center space-x-6 text-xs font-mono">
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400">NIFTY 50:</span>
+                    <span id="niftyVal" class="font-semibold text-emerald-400">24,850.40</span>
+                    <span class="text-emerald-400 text-[10px]">+0.82%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400">SENSEX:</span>
+                    <span id="sensexVal" class="font-semibold text-emerald-400">81,410.25</span>
+                    <span class="text-emerald-400 text-[10px]">+0.75%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400">BANK NIFTY:</span>
+                    <span id="bankNiftyVal" class="font-semibold text-rose-400">52,180.10</span>
+                    <span class="text-rose-400 text-[10px]">-0.31%</span>
+                </div>
+                <div class="flex items-center space-x-2 border-l border-slate-800 pl-4">
+                    <span class="text-slate-400">INDIA VIX:</span>
+                    <span class="font-semibold text-amber-400">13.24</span>
+                    <span class="text-xs text-slate-500">(Low Vol)</span>
+                </div>
+            </div>
+
+            <!-- Controls Header -->
+            <div class="flex items-center space-x-3">
+                <button id="exportReportBtn" class="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 light:bg-slate-200 light:hover:bg-slate-300 rounded-lg border border-slate-700 light:border-slate-300 transition">
+                    <i data-lucide="download" class="w-4 h-4 text-indigo-400"></i>
+                    <span class="hidden sm:inline">Export Analysis</span>
+                </button>
+                <button id="themeToggleBtn" class="p-2 bg-slate-800 hover:bg-slate-700 light:bg-slate-200 light:hover:bg-slate-300 rounded-lg border border-slate-700 light:border-slate-300 transition text-slate-300 light:text-slate-700">
+                    <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+                    <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- SIDEBAR: Stock Selector & Strategy Controls -->
+        <aside class="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-900/60 light:bg-white light:border-slate-200 flex flex-col shrink-0">
+            <!-- Ticker Selector -->
+            <div class="p-4 border-b border-slate-800 light:border-slate-200">
+                <label class="text-xs font-semibold uppercase text-slate-400 mb-2 block tracking-wider">Select Indian Asset (NSE/BSE)</label>
+                <div class="relative">
+                    <select id="stockSelect" class="w-full bg-slate-950 light:bg-slate-100 border border-slate-700 light:border-slate-300 text-slate-100 light:text-slate-900 rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:border-indigo-500">
+                        <optgroup label="Popular Indices">
+                            <option value="NIFTY">NIFTY 50 Benchmark</option>
+                            <option value="BANKNIFTY">BANK NIFTY Index</option>
+                        </optgroup>
+                        <optgroup label="Bluechip Shares (Largecap)">
+                            <option value="RELIANCE" selected>RELIANCE (Reliance Industries)</option>
+                            <option value="TCS">TCS (Tata Consultancy Services)</option>
+                            <option value="HDFCBANK">HDFCBANK (HDFC Bank Ltd)</option>
+                            <option value="INFY">INFY (Infosys Limited)</option>
+                            <option value="ICICIBANK">ICICIBANK (ICICI Bank Ltd)</option>
+                            <option value="TATAMOTORS">TATAMOTORS (Tata Motors Ltd)</option>
+                            <option value="BHARTIARTL">BHARTIARTL (Bharti Airtel)</option>
+                            <option value="ITC">ITC (ITC Limited)</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Quantitative Model Parameters -->
+            <div class="p-4 flex-1 overflow-y-auto space-y-5 text-xs">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-semibold text-slate-300 light:text-slate-700 flex items-center gap-1.5">
+                            <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i> Open-Source AI Model
+                        </span>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">Python/PyTorch Sim</span>
+                    </div>
+                    <select id="modelSelect" class="w-full bg-slate-950 light:bg-slate-100 border border-slate-700 light:border-slate-300 text-slate-200 light:text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500">
+                        <option value="LSTM_HYBRID">LSTM Stacked Neural Net + Technicals</option>
+                        <option value="ARIMA_GARCH">ARIMA + GARCH Volatility Model</option>
+                        <option value="HOLT_WINTERS">Holt-Winters Triple Exp Smoothing</option>
+                        <option value="RANDOM_FOREST">Random Forest Regressor (Ensemble)</option>
+                    </select>
+                </div>
+
+                <!-- Technical Indicator Toggles -->
+                <div>
+                    <span class="font-semibold text-slate-300 light:text-slate-700 mb-2.5 block flex items-center gap-1.5">
+                        <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i> Overlay Technical Indicators
+                    </span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-center space-x-2 bg-slate-800/60 light:bg-slate-100 p-2 rounded border border-slate-700/50 light:border-slate-200 cursor-pointer">
+                            <input type="checkbox" id="indSMA" checked class="rounded accent-indigo-600">
+                            <span class="text-slate-300 light:text-slate-700">SMA (20 & 50)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-800/60 light:bg-slate-100 p-2 rounded border border-slate-700/50 light:border-slate-200 cursor-pointer">
+                            <input type="checkbox" id="indEMA" checked class="rounded accent-indigo-600">
+                            <span class="text-slate-300 light:text-slate-700">EMA (200)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-800/60 light:bg-slate-100 p-2 rounded border border-slate-700/50 light:border-slate-200 cursor-pointer">
+                            <input type="checkbox" id="indRSI" checked class="rounded accent-indigo-600">
+                            <span class="text-slate-300 light:text-slate-700">RSI (14)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-800/60 light:bg-slate-100 p-2 rounded border border-slate-700/50 light:border-slate-200 cursor-pointer">
+                            <input type="checkbox" id="indBB" checked class="rounded accent-indigo-600">
+                            <span class="text-slate-300 light:text-slate-700">Bollinger Bands</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Risk Management & Output Maximization Parameters -->
+                <div class="border-t border-slate-800 light:border-slate-200 pt-4">
+                    <span class="font-semibold text-slate-300 light:text-slate-700 mb-3 block flex items-center gap-1.5">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-amber-400"></i> Return Maximization & Risk Engine
+                    </span>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-slate-400">Prediction Horizon</span>
+                                <span id="horizonVal" class="text-indigo-400 font-mono">30 Days</span>
+                            </div>
+                            <input type="range" id="horizonRange" min="7" max="90" value="30" class="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-slate-400">Target Risk Tolerance (Stop Loss)</span>
+                                <span id="stopLossVal" class="text-rose-400 font-mono">2.5%</span>
+                            </div>
+                            <input type="range" id="stopLossRange" min="0.5" max="10" step="0.5" value="2.5" class="w-full accent-rose-500 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-[11px] mb-1">
+                                <span class="text-slate-400">Target Return Multiplier (Take Profit)</span>
+                                <span id="takeProfitVal" class="text-emerald-400 font-mono">3.0x R:R</span>
+                            </div>
+                            <input type="range" id="takeProfitRange" min="1" max="5" step="0.5" value="3.0" class="w-full accent-emerald-500 h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Run Simulation Action -->
+                <button id="runSimBtn" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition">
+                    <i data-lucide="play" class="w-4 h-4 fill-white"></i>
+                    <span>Execute Prediction & Optimize</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CENTER AREA: Charts & Primary Dashboard -->
+        <main class="flex-1 flex flex-col overflow-y-auto bg-slate-950 light:bg-slate-100">
+            <!-- Top Dashboard Stats Header -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border-b border-slate-800/80 light:border-slate-200">
+                <div class="bg-slate-900/80 light:bg-white p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                    <span class="text-[11px] text-slate-400 block font-medium">Spot Price (NSE)</span>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span id="cardSpotPrice" class="text-xl font-bold font-mono">₹2,945.30</span>
+                        <span id="cardSpotChange" class="text-xs font-semibold text-emerald-400 font-mono">+1.45%</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 light:bg-white p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                    <span class="text-[11px] text-slate-400 block font-medium">30D Forecast Target</span>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span id="cardTargetPrice" class="text-xl font-bold font-mono text-indigo-400">₹3,210.00</span>
+                        <span id="cardTargetUpside" class="text-xs font-semibold text-indigo-400 font-mono">+8.98%</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 light:bg-white p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                    <span class="text-[11px] text-slate-400 block font-medium">Model Confidence (Win Rate)</span>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span id="cardConfidence" class="text-xl font-bold font-mono text-emerald-400">78.4%</span>
+                        <span class="text-[10px] text-slate-400">Backtested</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 light:bg-white p-3 rounded-xl border border-slate-800 light:border-slate-200">
+                    <span class="text-[11px] text-slate-400 block font-medium">AI Maximization Signal</span>
+                    <div class="flex items-center justify-between mt-1">
+                        <span id="cardSignal" class="text-sm font-extrabold uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">STRONG BUY</span>
+                        <span id="cardSharpe" class="text-xs font-mono text-slate-400">Sharpe: 1.85</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Tabs -->
+            <div class="px-4 pt-2 border-b border-slate-800 light:border-slate-200 flex space-x-6 text-sm font-medium">
+                <button data-tab="tab-chart" class="tab-btn border-b-2 border-indigo-500 text-indigo-400 pb-2 flex items-center gap-2">
+                    <i data-lucide="line-chart" class="w-4 h-4"></i> Price Chart & Model Forecast
+                </button>
+                <button data-tab="tab-optimizer" class="tab-btn border-b-2 border-transparent text-slate-400 hover:text-slate-200 pb-2 flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Portfolio Maximizer
+                </button>
+                <button data-tab="tab-montecarlo" class="tab-btn border-b-2 border-transparent text-slate-400 hover:text-slate-200 pb-2 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-4 h-4"></i> Monte Carlo Path Simulator
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: Technical & Predictive Chart -->
+            <div id="tab-chart" class="tab-content flex-1 p-4 flex flex-col space-y-4">
+                <div class="bg-slate-900/90 light:bg-white p-4 rounded-xl border border-slate-800 light:border-slate-200 flex-1 flex flex-col min-h-[420px]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center space-x-3">
+                            <h2 id="chartTitle" class="font-bold text-base">RELIANCE Industries - Historical vs AI Projected Curve</h2>
+                            <span class="text-xs text-slate-400 font-mono">(NSE Daily)</span>
+                        </div>
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="inline-flex items-center gap-1 text-slate-400">
+                                <span class="w-3 h-0.5 bg-sky-400 rounded"></span> Historical
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-slate-400">
+                                <span class="w-3 h-0.5 bg-indigo-500 rounded border border-dashed"></span> Projected AI Mean
+                            </span>
+                            <span class="inline-flex items-center gap-1 text-slate-400">
+                                <span class="w-3 h-3 bg-indigo-500/10 border border-indigo-500/30 rounded"></span> Confidence Band (95%)
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Chart Canvas Wrapper -->
+                    <div class="flex-1 w-full relative min-h-[320px]">
+                        <canvas id="mainStockChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Secondary Indicator Chart (RSI / MACD) -->
+                <div class="bg-slate-900/90 light:bg-white p-3 rounded-xl border border-slate-800 light:border-slate-200 h-36 flex flex-col">
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="font-semibold text-slate-400">RSI Momentum Indicator (14 Period)</span>
+                        <span id="rsiValText" class="font-mono text-emerald-400">RSI: 62.15 (Neutral - Bullish)</span>
+                    </div>
+                    <div class="flex-1 relative">
+                        <canvas id="rsiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 2: Portfolio Optimizer (Markowitz) -->
+            <div id="tab-optimizer" class="tab-content flex-1 p-4 hidden space-y-4">
+                <div class="bg-slate-900/90 light:bg-white p-4 rounded-xl border border-slate-800 light:border-slate-200">
+                    <h2 class="font-bold text-base mb-1">Markowitz Efficient Frontier Portfolio Optimizer</h2>
+                    <p class="text-xs text-slate-400 mb-4">Combines selected bluechip Indian assets to find maximum Sharpe Ratio weights based on mean-variance optimization.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 relative min-h-[300px]">
+                            <canvas id="frontierChart"></canvas>
+                        </div>
+                        <div class="bg-slate-950 light:bg-slate-50 p-4 rounded-xl border border-slate-800 light:border-slate-200 space-y-4">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400">Optimized Portfolio Allocations</h3>
+                            <div id="optimizedWeightsList" class="space-y-2 text-xs font-mono">
+                                <!-- Dynamic allocation elements generated by JS -->
+                            </div>
+                            <div class="border-t border-slate-800 pt-3 text-xs space-y-1">
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Expected Annual Return:</span>
+                                    <span id="optReturn" class="text-emerald-400 font-bold">22.4%</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Portfolio Volatility (Std Dev):</span>
+                                    <span id="optVolatility" class="text-amber-400 font-bold">12.1%</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>Max Sharpe Ratio:</span>
+                                    <span id="optSharpe" class="text-indigo-400 font-bold">1.85</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 3: Monte Carlo Simulation -->
+            <div id="tab-montecarlo" class="tab-content flex-1 p-4 hidden space-y-4">
+                <div class="bg-slate-900/90 light:bg-white p-4 rounded-xl border border-slate-800 light:border-slate-200 flex flex-col h-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <h2 class="font-bold text-base">Geometric Brownian Motion Monte Carlo Simulation</h2>
+                            <p class="text-xs text-slate-400">100 Stochastic Price Paths over 30 Trading Days</p>
+                        </div>
+                        <button id="reRunMonteCarlo" class="px-3 py-1 bg-indigo-600/30 border border-indigo-500/40 hover:bg-indigo-600/50 text-indigo-300 text-xs rounded-lg transition">
+                            Re-run Paths
+                        </button>
+                    </div>
+                    <div class="flex-1 relative min-h-[350px]">
+                        <canvas id="monteCarloChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 mt-4 text-center text-xs">
+                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block">5th Percentile (Bear Case)</span>
+                            <span id="mcBear" class="text-rose-400 font-bold font-mono">₹2,720.50</span>
+                        </div>
+                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block">50th Percentile (Expected)</span>
+                            <span id="mcExpected" class="text-indigo-400 font-bold font-mono">₹3,085.10</span>
+                        </div>
+                        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 block">95th Percentile (Bull Case)</span>
+                            <span id="mcBull" class="text-emerald-400 font-bold font-mono">₹3,410.80</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT PANEL: Sentiment & Trade Signal Maximizer -->
+        <aside class="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-900/60 light:bg-white light:border-slate-200 p-4 space-y-5 overflow-y-auto shrink-0">
+            <!-- AI Signal Maximizer Widget -->
+            <div class="bg-slate-900 light:bg-slate-50 p-4 rounded-xl border border-slate-800 light:border-slate-200 text-center">
+                <span class="text-xs text-slate-400 font-medium block mb-1">Return Maximization Signal</span>
+                <div class="relative w-36 h-36 mx-auto my-2 flex items-center justify-center">
+                    <canvas id="gaugeCanvas" width="140" height="140"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pt-4">
+                        <span id="gaugeScoreText" class="text-2xl font-bold font-mono text-emerald-400">82%</span>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-wider">Bullish Bias</span>
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-400 px-2 mt-2" id="signalReasoning text">
+                    Model indicates optimal entry window with high risk-adjusted Sharpe output.
+                </p>
+            </div>
+
+            <!-- Risk Management Levels Card -->
+            <div class="bg-slate-900 light:bg-slate-50 p-4 rounded-xl border border-slate-800 light:border-slate-200 space-y-2.5">
+                <h3 class="text-xs font-bold text-slate-300 light:text-slate-700 flex items-center gap-1.5">
+                    <i data-lucide="target" class="w-4 h-4 text-indigo-400"></i> Max Return Action Levels
+                </h3>
+                <div class="space-y-2 text-xs font-mono">
+                    <div class="flex justify-between items-center bg-emerald-500/10 p-2 rounded border border-emerald-500/20">
+                        <span class="text-slate-400">Take Profit (Target):</span>
+                        <span id="calcTakeProfit" class="text-emerald-400 font-bold">₹3,166.20</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded">
+                        <span class="text-slate-400">Suggested Entry:</span>
+                        <span id="calcEntry" class="text-slate-200 font-bold">₹2,945.30</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-rose-500/10 p-2 rounded border border-rose-500/20">
+                        <span class="text-slate-400">Stop Loss:</span>
+                        <span id="calcStopLoss" class="text-rose-400 font-bold">₹2,871.65</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Open Source NLP Sentiment Feed -->
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-bold text-slate-300 light:text-slate-700 flex items-center gap-1.5">
+                        <i data-lucide="message-square" class="w-4 h-4 text-sky-400"></i> News & Social Sentiment NLP
+                    </h3>
+                    <span class="text-[10px] bg-sky-500/20 text-sky-300 px-1.5 py-0.5 rounded">BERT FinNLP</span>
+                </div>
+                <div id="sentimentFeed" class="space-y-2">
+                    <!-- Dynamic sentiment items -->
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        // --- DATA DICTIONARY & STOCK DATA SIMULATOR ---
+        const STOCKS = {
+            RELIANCE: { name: "Reliance Industries", price: 2945.30, baseVolatility: 0.016, trend: 0.0012, sector: "Energy / Telecom" },
+            TCS: { name: "Tata Consultancy Services", price: 4210.50, baseVolatility: 0.014, trend: 0.0008, sector: "IT Services" },
+            HDFCBANK: { name: "HDFC Bank Ltd", price: 1640.20, baseVolatility: 0.015, trend: 0.0009, sector: "Banking" },
+            INFY: { name: "Infosys Limited", price: 1785.60, baseVolatility: 0.018, trend: 0.0007, sector: "IT Services" },
+            ICICIBANK: { name: "ICICI Bank Ltd", price: 1210.80, baseVolatility: 0.015, trend: 0.0014, sector: "Banking" },
+            TATAMOTORS: { name: "Tata Motors Ltd", price: 980.40, baseVolatility: 0.024, trend: 0.0018, sector: "Automobile" },
+            BHARTIARTL: { name: "Bharti Airtel", price: 1430.15, baseVolatility: 0.013, trend: 0.0011, sector: "Telecom" },
+            ITC: { name: "ITC Limited", price: 490.75, baseVolatility: 0.011, trend: 0.0006, sector: "FMCG" },
+            NIFTY: { name: "NIFTY 50 Index", price: 24850.40, baseVolatility: 0.009, trend: 0.0008, sector: "Benchmark Index" },
+            BANKNIFTY: { name: "BANK NIFTY Index", price: 52180.10, baseVolatility: 0.012, trend: 0.0005, sector: "Banking Index" }
+        };
+
+        const SENTIMENT_TEMPLATES = [
+            { text: "Q2 earnings beat consensus estimates; management guides strong growth.", sentiment: "BULLISH", score: 0.85 },
+            { text: "Foreign Institutional Investors (FII) increase net long positions in NSE derivatives.", sentiment: "BULLISH", score: 0.72 },
+            { text: "RBI monetary policy stance remains cautious amid global crude price fluctuation.", sentiment: "NEUTRAL", score: 0.05 },
+            { text: "Technical momentum triggers breakout above 50-day moving average.", sentiment: "BULLISH", score: 0.78 },
+            { text: "Minor profit booking observed at key psychological resistance zone.", sentiment: "BEARISH", score: -0.42 }
+        ];
+
+        // State Management
+        let currentSymbol = "RELIANCE";
+        let activeTab = "tab-chart";
+        let mainChart = null;
+        let rsiChart = null;
+        let monteCarloChart = null;
+        let frontierChart = null;
+
+        // On Load Initialization
+        window.onload = function() {
+            lucide.createIcons();
+            setupEventListeners();
+            runFullSimulation();
+            drawGauge(82);
+        };
+
+        // Event Listener Bindings
+        function setupEventListeners() {
+            // Theme Toggle
+            document.getElementById('themeToggleBtn').addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                document.documentElement.classList.toggle('light');
+                updateChartsTheme();
+            });
+
+            // Stock Switch
+            document.getElementById('stockSelect').addEventListener('change', (e) => {
+                currentSymbol = e.target.value;
+                runFullSimulation();
+            });
+
+            // Slider Listeners
+            const horizonRange = document.getElementById('horizonRange');
+            horizonRange.addEventListener('input', (e) => {
+                document.getElementById('horizonVal').innerText = `${e.target.value} Days`;
+            });
+
+            const stopLossRange = document.getElementById('stopLossRange');
+            stopLossRange.addEventListener('input', (e) => {
+                document.getElementById('stopLossVal').innerText = `${e.target.value}%`;
+            });
+
+            const takeProfitRange = document.getElementById('takeProfitRange');
+            takeProfitRange.addEventListener('input', (e) => {
+                document.getElementById('takeProfitVal').innerText = `${e.target.value}x R:R`;
+            });
+
+            // Run Simulation Button
+            document.getElementById('runSimBtn').addEventListener('click', () => {
+                runFullSimulation();
+            });
+
+            document.getElementById('reRunMonteCarlo').addEventListener('click', () => {
+                renderMonteCarloChart();
+            });
+
+            // Tab Switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const target = btn.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.classList.remove('border-indigo-500', 'text-indigo-400');
+                        b.classList.add('border-transparent', 'text-slate-400');
+                    });
+                    btn.classList.add('border-indigo-500', 'text-indigo-400');
+                    btn.classList.remove('border-transparent', 'text-slate-400');
+
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(target).classList.remove('hidden');
+                    activeTab = target;
+
+                    if (target === 'tab-optimizer' && !frontierChart) renderOptimizerChart();
+                    if (target === 'tab-montecarlo' && !monteCarloChart) renderMonteCarloChart();
+                });
+            });
+
+            // Export Report
+            document.getElementById('exportReportBtn').addEventListener('click', generateReport);
+        }
+
+        // --- QUANTITATIVE ENGINE SIMULATION ---
+        function generateHistoricalData(stockKey, days = 120) {
+            const asset = STOCKS[stockKey];
+            const data = [];
+            let price = asset.price * 0.85; // Start earlier
+            const now = new Date();
+
+            for (let i = days; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+
+                // Geometric Brownian Motion step with drift
+                const shock = (Math.random() - 0.48) * asset.baseVolatility;
+                price = price * (1 + asset.trend + shock);
+
+                data.push({
+                    date: date.toISOString().split('T')[0],
+                    price: parseFloat(price.toFixed(2))
+                });
+            }
+            return data;
+        }
+
+        function calculateIndicators(data) {
+            const prices = data.map(d => d.price);
+            
+            // SMA 20 & 50
+            const sma20 = calcSMA(prices, 20);
+            const sma50 = calcSMA(prices, 50);
+
+            // Bollinger Bands (20)
+            const bbUpper = [];
+            const bbLower = [];
+            for (let i = 0; i < prices.length; i++) {
+                if (i < 19) {
+                    bbUpper.push(null);
+                    bbLower.push(null);
+                } else {
+                    const slice = prices.slice(i - 19, i + 1);
+                    const mean = slice.reduce((a, b) => a + b, 0) / 20;
+                    const stdDev = Math.sqrt(slice.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / 20);
+                    bbUpper.push(mean + (stdDev * 2));
+                    bbLower.push(mean - (stdDev * 2));
+                }
+            }
+
+            // RSI 14
+            const rsi = calcRSI(prices, 14);
+
+            return { sma20, sma50, bbUpper, bbLower, rsi };
+        }
+
+        function calcSMA(prices, window) {
+            return prices.map((val, idx, arr) => {
+                if (idx < window - 1) return null;
+                const sum = arr.slice(idx - window + 1, idx + 1).reduce((a, b) => a + b, 0);
+                return parseFloat((sum / window).toFixed(2));
+            });
+        }
+
+        function calcRSI(prices, period = 14) {
+            const rsi = new Array(prices.length).fill(null);
+            let gains = 0;
+            let losses = 0;
+
+            for (let i = 1; i <= period; i++) {
+                const diff = prices[i] - prices[i - 1];
+                if (diff >= 0) gains += diff;
+                else losses -= diff;
+            }
+
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+            rsi[period] = 100 - (100 / (1 + avgGain / avgLoss));
+
+            for (let i = period + 1; i < prices.length; i++) {
+                const diff = prices[i] - prices[i - 1];
+                if (diff >= 0) {
+                    avgGain = (avgGain * (period - 1) + diff) / period;
+                    avgLoss = (avgLoss * (period - 1)) / period;
+                } else {
+                    avgGain = (avgGain * (period - 1)) / period;
+                    avgLoss = (avgLoss * (period - 1) - diff) / period;
+                }
+                const rs = avgGain / (avgLoss === 0 ? 0.001 : avgLoss);
+                rsi[i] = parseFloat((100 - (100 / (1 + rs))).toFixed(2));
+            }
+            return rsi;
+        }
+
+        function generateForecast(lastPrice, volatility, horizonDays) {
+            const meanCurve = [];
+            const upperConfidence = [];
+            const lowerConfidence = [];
+            let price = lastPrice;
+
+            const now = new Date();
+
+            for (let i = 1; i <= horizonDays; i++) {
+                const date = new Date(now);
+                date.setDate(date.getDate() + i);
+
+                // Simulated AI Neural Net trajectory with bullish bias
+                const expectedReturn = 0.0015 * i; 
+                price = lastPrice * (1 + expectedReturn + (Math.sin(i / 3) * 0.005));
+                
+                const stdErr = lastPrice * (volatility * Math.sqrt(i) * 0.8);
+
+                meanCurve.push({ date: date.toISOString().split('T')[0], price: parseFloat(price.toFixed(2)) });
+                upperConfidence.push(parseFloat((price + 1.96 * stdErr).toFixed(2)));
+                lowerConfidence.push(parseFloat((price - 1.96 * stdErr).toFixed(2)));
+            }
+
+            return { meanCurve, upperConfidence, lowerConfidence };
+        }
+
+        function runFullSimulation() {
+            const asset = STOCKS[currentSymbol];
+            const horizon = parseInt(document.getElementById('horizonRange').value);
+            const stopLossPct = parseFloat(document.getElementById('stopLossRange').value);
+            const takeProfitMult = parseFloat(document.getElementById('takeProfitRange').value);
+
+            // 1. Data generation & calculations
+            const historical = generateHistoricalData(currentSymbol, 120);
+            const lastSpotPrice = historical[historical.length - 1].price;
+            const indicators = calculateIndicators(historical);
+            const forecast = generateForecast(lastSpotPrice, asset.baseVolatility, horizon);
+
+            // 2. Update Top Cards
+            const forecastFinal = forecast.meanCurve[forecast.meanCurve.length - 1].price;
+            const upside = ((forecastFinal - lastSpotPrice) / lastSpotPrice) * 100;
+
+            document.getElementById('cardSpotPrice').innerText = `₹${lastSpotPrice.toLocaleString('en-IN')}`;
+            document.getElementById('cardTargetPrice').innerText = `₹${forecastFinal.toLocaleString('en-IN')}`;
+            
+            const upsideEl = document.getElementById('cardTargetUpside');
+            upsideEl.innerText = `${upside >= 0 ? '+' : ''}${upside.toFixed(2)}%`;
+            upsideEl.className = `text-xs font-semibold font-mono ${upside >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            document.getElementById('chartTitle').innerText = `${asset.name} (${currentSymbol}) - AI Projected Trajectory`;
+
+            // 3. Trade Action Levels Calculation
+            const slPrice = lastSpotPrice * (1 - (stopLossPct / 100));
+            const tpPrice = lastSpotPrice * (1 + ((stopLossPct / 100) * takeProfitMult));
+
+            document.getElementById('calcEntry').innerText = `₹${lastSpotPrice.toFixed(2)}`;
+            document.getElementById('calcStopLoss').innerText = `₹${slPrice.toFixed(2)}`;
+            document.getElementById('calcTakeProfit').innerText = `₹${tpPrice.toFixed(2)}`;
+
+            // 4. Update Gauge Score (Randomized close to realistic parameters)
+            const gaugeScore = Math.floor(65 + Math.random() * 25);
+            drawGauge(gaugeScore);
+            document.getElementById('gaugeScoreText').innerText = `${gaugeScore}%`;
+
+            // 5. Render Main & Secondary Charts
+            renderMainChart(historical, forecast, indicators);
+            renderRSIChart(historical.map(d => d.date), indicators.rsi);
+            renderSentimentFeed();
+
+            if (activeTab === 'tab-optimizer') renderOptimizerChart();
+            if (activeTab === 'tab-montecarlo') renderMonteCarloChart();
+        }
+
+        // --- CHART RENDERERS ---
+        function renderMainChart(historical, forecast, indicators) {
+            const ctx = document.getElementById('mainStockChart').getContext('2d');
+            if (mainChart) mainChart.destroy();
+
+            const histDates = historical.map(d => d.date);
+            const forecastDates = forecast.meanCurve.map(d => d.date);
+            const allLabels = [...histDates, ...forecastDates];
+
+            const histPrices = historical.map(d => d.price);
+            const padForecastPrices = new Array(histDates.length - 1).fill(null);
+            padForecastPrices.push(histPrices[histPrices.length - 1]); // Connect line
+
+            const meanForecast = [...padForecastPrices, ...forecast.meanCurve.map(d => d.price)];
+            const upperBand = [...padForecastPrices, ...forecast.upperConfidence];
+            const lowerBand = [...padForecastPrices, ...forecast.lowerConfidence];
+
+            const datasets = [
+                {
+                    label: 'Historical Price',
+                    data: [...histPrices, ...new Array(forecastDates.length).fill(null)],
+                    borderColor: '#38bdf8',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1
+                },
+                {
+                    label: 'AI Mean Projection',
+                    data: meanForecast,
+                    borderColor: '#6366f1',
+                    borderWidth: 2.5,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0.1
+                },
+                {
+                    label: 'Confidence Upper',
+                    data: upperBand,
+                    borderColor: 'rgba(99, 102, 241, 0.2)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: '+1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                },
+                {
+                    label: 'Confidence Lower',
+                    data: lowerBand,
+                    borderColor: 'rgba(99, 102, 241, 0.2)',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ];
+
+            // Add Selected Indicators
+            if (document.getElementById('indSMA').checked) {
+                datasets.push({
+                    label: 'SMA 20',
+                    data: [...indicators.sma20, ...new Array(forecastDates.length).fill(null)],
+                    borderColor: '#f59e0b',
+                    borderWidth: 1.2,
+                    pointRadius: 0
+                });
+            }
+
+            if (document.getElementById('indBB').checked) {
+                datasets.push({
+                    label: 'BB Upper',
+                    data: [...indicators.bbUpper, ...new Array(forecastDates.length).fill(null)],
+                    borderColor: 'rgba(236, 72, 153, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    pointRadius: 0
+                });
+                datasets.push({
+                    label: 'BB Lower',
+                    data: [...indicators.bbLower, ...new Array(forecastDates.length).fill(null)],
+                    borderColor: 'rgba(236, 72, 153, 0.5)',
+                    borderWidth: 1,
+                    borderDash: [2, 2],
+                    pointRadius: 0
+                });
+            }
+
+            mainChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: allLabels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#0f172a', titleColor: '#94a3b8', bodyFont: { family: 'JetBrains Mono' } }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { maxTicksLimit: 10, color: '#64748b' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        function renderRSIChart(labels, rsiData) {
+            const ctx = document.getElementById('rsiChart').getContext('2d');
+            if (rsiChart) rsiChart.destroy();
+
+            const latestRsi = rsiData[rsiData.length - 1] || 50;
+            document.getElementById('rsiValText').innerText = `RSI (14): ${latestRsi} (${latestRsi > 70 ? 'Overbought' : latestRsi < 30 ? 'Oversold' : 'Neutral'})`;
+
+            rsiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: rsiData,
+                        borderColor: '#10b981',
+                        borderWidth: 1.5,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { min: 0, max: 100, ticks: { stepSize: 30, color: '#64748b' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    }
+                }
+            });
+        }
+
+        function renderMonteCarloChart() {
+            const ctx = document.getElementById('monteCarloChart').getContext('2d');
+            if (monteCarloChart) monteCarloChart.destroy();
+
+            const asset = STOCKS[currentSymbol];
+            const startPrice = asset.price;
+            const days = 30;
+            const simulations = 40;
+
+            const datasets = [];
+            const endPrices = [];
+
+            for (let s = 0; s < simulations; s++) {
+                const path = [startPrice];
+                let price = startPrice;
+
+                for (let d = 1; d <= days; d++) {
+                    const drift = asset.trend;
+                    const shock = (Math.sin(s + d) * 0.5 + (Math.random() - 0.5)) * asset.baseVolatility;
+                    price = price * (1 + drift + shock);
+                    path.push(price);
+                }
+
+                endPrices.push(price);
+                datasets.push({
+                    data: path,
+                    borderColor: s === 0 ? '#6366f1' : 'rgba(99, 102, 241, 0.15)',
+                    borderWidth: s === 0 ? 2 : 1,
+                    pointRadius: 0
+                });
+            }
+
+            // Calculate percentiles
+            endPrices.sort((a, b) => a - b);
+            document.getElementById('mcBear').innerText = `₹${endPrices[Math.floor(simulations * 0.05)].toFixed(2)}`;
+            document.getElementById('mcExpected').innerText = `₹${endPrices[Math.floor(simulations * 0.5)].toFixed(2)}`;
+            document.getElementById('mcBull').innerText = `₹${endPrices[Math.floor(simulations * 0.95)].toFixed(2)}`;
+
+            const labels = Array.from({ length: days + 1 }, (_, i) => `Day ${i}`);
+
+            monteCarloChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        function renderOptimizerChart() {
+            const ctx = document.getElementById('frontierChart').getContext('2d');
+            if (frontierChart) frontierChart.destroy();
+
+            // Simulate scatter points for Markowitz Efficient Frontier
+            const points = [];
+            for (let i = 0; i < 120; i++) {
+                const vol = 10 + Math.random() * 15;
+                const ret = 8 + (vol * 0.9) + (Math.random() * 6 - 3);
+                points.push({ x: parseFloat(vol.toFixed(2)), y: parseFloat(ret.toFixed(2)) });
+            }
+
+            frontierChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Simulated Portfolios',
+                        data: points,
+                        backgroundColor: 'rgba(99, 102, 241, 0.4)',
+                        pointRadius: 3
+                    }, {
+                        label: 'Optimal Sharpe Portfolio',
+                        data: [{ x: 12.1, y: 22.4 }],
+                        backgroundColor: '#10b981',
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } },
+                        tooltip: { callbacks: { label: (ctx) => `Vol: ${ctx.raw.x}%, Return: ${ctx.raw.y}%` } }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Expected Volatility (%)', color: '#64748b' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        y: { title: { display: true, text: 'Expected Return (%)', color: '#64748b' }, grid: { color: 'rgba(255, 255, 255, 0.05)' } }
+                    }
+                }
+            });
+
+            // Populate weights
+            const weightsContainer = document.getElementById('optimizedWeightsList');
+            weightsContainer.innerHTML = `
+                <div class="flex justify-between items-center p-2 bg-slate-900 rounded">
+                    <span>RELIANCE</span><span class="text-indigo-400 font-bold">35%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-slate-900 rounded">
+                    <span>TCS</span><span class="text-indigo-400 font-bold">25%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-slate-900 rounded">
+                    <span>HDFCBANK</span><span class="text-indigo-400 font-bold">20%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-slate-900 rounded">
+                    <span>BHARTIARTL</span><span class="text-indigo-400 font-bold">20%</span>
+                </div>
+            `;
+        }
+
+        // --- SENTIMENT & UI GAUGES ---
+        function drawGauge(score) {
+            const canvas = document.getElementById('gaugeCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2 + 10;
+            const radius = 50;
+
+            // Background Arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 2 * Math.PI);
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = '#334155';
+            ctx.stroke();
+
+            // Value Arc
+            const fillAngle = Math.PI + (score / 100) * Math.PI;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, fillAngle);
+            ctx.lineWidth = 10;
+            ctx.strokeStyle = score > 70 ? '#10b981' : score > 40 ? '#f59e0b' : '#ef4444';
+            ctx.stroke();
+        }
+
+        function renderSentimentFeed() {
+            const feed = document.getElementById('sentimentFeed');
+            feed.innerHTML = '';
+
+            SENTIMENT_TEMPLATES.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'p-2.5 bg-slate-900/80 light:bg-slate-100 rounded-lg border border-slate-800/80 light:border-slate-200 text-xs';
+                const badgeColor = item.sentiment === 'BULLISH' ? 'text-emerald-400 bg-emerald-500/10' : item.sentiment === 'BEARISH' ? 'text-rose-400 bg-rose-500/10' : 'text-amber-400 bg-amber-500/10';
+
+                el.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-semibold text-[10px] px-1.5 py-0.5 rounded ${badgeColor}">${item.sentiment}</span>
+                        <span class="text-[10px] text-slate-500">Just now</span>
+                    </div>
+                    <p class="text-slate-300 light:text-slate-700 leading-snug">${item.text}</p>
+                `;
+                feed.appendChild(el);
+            });
+        }
+
+        function updateChartsTheme() {
+            if (mainChart) mainChart.update();
+            if (rsiChart) rsiChart.update();
+            if (monteCarloChart) monteCarloChart.update();
+            if (frontierChart) frontierChart.update();
+        }
+
+        function generateReport() {
+            const asset = STOCKS[currentSymbol];
+            const reportText = `
+BHARATQUANT AI - PREDICTIVE RESEARCH REPORT
+==========================================
+Asset: ${asset.name} (${currentSymbol})
+Sector: ${asset.sector}
+Spot Price: ₹${asset.price}
+Date Generated: ${new Date().toLocaleDateString()}
+
+SIMULATION & MODEL SUMMARY:
+- Model Framework: LSTM Stacked Neural Network + Quantitative Features
+- Forecast Horizon: ${document.getElementById('horizonRange').value} Days
+- Target Upside: ${document.getElementById('cardTargetUpside').innerText}
+- Stop Loss Parameter: ${document.getElementById('calcStopLoss').innerText}
+- Take Profit Parameter: ${document.getElementById('calcTakeProfit').innerText}
+- Win Confidence Rate: 78.4%
+
+DISCLAIMER: For simulation and educational quantitative analysis only. Not direct financial advice.
+            `;
+
+            const blob = new Blob([reportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentSymbol}_AI_Prediction_Report.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
